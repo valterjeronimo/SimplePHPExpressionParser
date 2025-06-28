@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Bitnami: Open Source. Simplified</title>
+  <title>Expression Parser</title>
 </head>
 <body>
 <?php
@@ -24,10 +24,13 @@ if(isset($_POST['Expr']))
 {
 	$offset=0;
 	$NextOffset=0;
+	//Parses the expression
 	$res= ExpressionParser::Parse($Expr);
 	
+	//Expression Context handles functions and stores variables
 	$Ctx=new MyExpressionContext();
 	
+	//Expression Context handles functions and stores variables
 	$Ctx->SetValue('abc',3);
 	$Ctx->SetValue('abcd',4);
 	
