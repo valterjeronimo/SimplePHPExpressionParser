@@ -105,7 +105,7 @@ class ExpressionParser
 			else if($opr->IsValue(',',')'))
 				break;
 			else
-				return ExpressionToken::NewError("Wasn't expecting '" . $opr->Value ."' at this time.", $opr->Value, $opr->Position);
+				return BaseExpressionItem::NewError("Wasn't expecting '" . $opr->Value ."' at this time.", $opr->Value, $opr->Position);
  		}
 		
 		while(sizeof($res)>1)
@@ -120,7 +120,7 @@ class ExpressionParser
 				{
 					$pre = ExpressionParser::OperatorPrecedence($itm);
 					if($pre<0)
-						return ExpressionToken::NewError('Unkown operator precedence', $itm->Value, $itm->Position);
+						return BaseExpressionItem::NewError('Unkown operator precedence', $itm->Value, $itm->Position);
 					if ($pre > $currentPrecedence)
 					{
 						$currentPrecedence = $pre;
@@ -145,7 +145,7 @@ class ExpressionParser
 	public static function ParseTerm(ExpressionLexer $lexer):?BaseExpressionItem
 	{
 		if($lexer->Finished())
-			return ExpressionToken::NewError('End of expression was not expected at this time', '', $lexer->EOFPosition);
+			return BaseExpressionItem::NewError('End of expression was not expected at this time', '', $lexer->EOFPosition);
 
 		$T = $lexer->NextToken();
 		if ($T->IsValue('null'))
@@ -158,10 +158,10 @@ class ExpressionParser
 			return ExpressionParser::LiteralExpression($T->Type, $T->Value, $T->Position);
 
 		if ($T->IsValue(')'))
-			return ExpressionToken::NewError("Wan't expecting ')' at this time" , ')' , $T->Position);
+			return BaseExpressionItem::NewError("Wan't expecting ')' at this time" , ')' , $T->Position);
 
 		if ($T->IsValue(','))
-			return ExpressionToken::NewError("Wan't expecting ',' at this time" , ',' , $T->Position);
+			return BaseExpressionItem::NewError("Wan't expecting ',' at this time" , ',' , $T->Position);
 
 		if ($T->IsValue('('))
 		{
@@ -173,7 +173,7 @@ class ExpressionParser
 			$pt=$lexer->NextToken();
 			
 			if (!$pt->IsValue(')'))
-				return ExpressionToken::NewError("Expected ')' but found '" . $pt->Value  ."'", $pt->Value , $pt->Position);
+				return BaseExpressionItem::NewError("Expected ')' but found '" . $pt->Value  ."'", $pt->Value , $pt->Position);
 			return $sub;
 		}
 
@@ -218,7 +218,7 @@ class ExpressionParser
 						break;
 
 					if (!$pt->IsValue(','))
-						return ExpressionToken::NewError("Expected ')' or ',' but found '" . $pt->Value  ."'", $pt->Value , $pt->Position);
+						return BaseExpressionItem::NewError("Expected ')' or ',' but found '" . $pt->Value  ."'", $pt->Value , $pt->Position);
 				}				
 				
 				return $res;
@@ -227,7 +227,7 @@ class ExpressionParser
 				return ExpressionParser::LiteralExpression('variable', $T->Value, $T->Position);
 		}
 				
-		return ExpressionToken::NewError("Unhandled token exception",$T->Value,$T->Position);
+		return BaseExpressionItem::NewError("Unhandled token exception",$T->Value,$T->Position);
 	}
 	
 }
@@ -284,7 +284,7 @@ class BaseExpressionContext implements IExpressionContext
 	
 	public function NewError(string $message)
 	{
-		return ExpressionToken::NewError($message,-1);
+		return BaseExpressionItem::NewError($message,-1);
 	}
 }
 
@@ -442,7 +442,7 @@ class ExpressionItem extends BaseExpressionItem
 		if($this->IsType('variable'))
 		{
 			if(!$Context->HasValue($this->Value))
-				return ExpressionToken::NewError("Unknown variable '" . $this->Value . "'",  $this->Position);
+				return BaseExpressionItem::NewError("Unknown variable '" . $this->Value . "'",  $this->Position);
 			
 			$v=$Context->GetValue($this->Value);
 			if(is_string($v))
@@ -455,7 +455,7 @@ class ExpressionItem extends BaseExpressionItem
 				return $v;
 			if(is_null($v))
 				return $v;
-			return ExpressionToken::NewError("Invalid value type for argument '" . $this->Value . "'",  $this->Position);
+			return BaseExpressionItem::NewError("Invalid value type for argument '" . $this->Value . "'",  $this->Position);
 		}
 		
 		$Params=array();
@@ -474,7 +474,6 @@ class ExpressionItem extends BaseExpressionItem
 			if($v instanceOf ExpressionError)
 			{
 				$v->Position=$this->Position;
-				$v->Value=$this->Value;
 				return $v;
 			}
 
@@ -488,7 +487,7 @@ class ExpressionItem extends BaseExpressionItem
 				return $v;
 			if(is_null($v))
 				return $v;
-			return ExpressionToken::NewError("Invalid result for function '" . $this->Value . "'", $this->Position);
+			return BaseExpressionItem::NewError("Invalid result for function '" . $this->Value . "'", $this->Position);
 		}
 
 		if($this->IsValue('+'))
@@ -497,10 +496,10 @@ class ExpressionItem extends BaseExpressionItem
 				return $Params[0] . $Params[1];
 
 			if(!is_numeric($Params[0]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
 
 			if(!is_numeric($Params[1]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
 
 			return $Params[0]+$Params[1];
 		}
@@ -508,10 +507,10 @@ class ExpressionItem extends BaseExpressionItem
 		if($this->IsValue('and','or'))
 		{
 			if(!is_int($Params[0]) && !is_bool($Params[0]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two booleans", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two booleans", $this->Position);
 
 			if(!is_int($Params[1]) && !is_bool($Params[1]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two booleans", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two booleans", $this->Position);
 			
 			$L=$Params[0];
 			$R=$Params[1];
@@ -530,10 +529,10 @@ class ExpressionItem extends BaseExpressionItem
 		if($this->IsValue('-','*','/','^'))
 		{
 			if(!is_numeric($Params[0]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two numbers",  $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two numbers",  $this->Position);
 
 			if(!is_numeric($Params[1]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two numbers", $this->Position);
 
 			if($this->IsValue('-'))
 				return $Params[0]-$Params[1];
@@ -544,14 +543,14 @@ class ExpressionItem extends BaseExpressionItem
 			if($this->IsValue('^'))
 			{
 				if(floatval($Params[1])==((float)0))
-					return ExpressionToken::NewError("Exponent's base can't be zero", $this->Position);
+					return BaseExpressionItem::NewError("Exponent's base can't be zero", $this->Position);
 				return pow($Params[0],$Params[1]);
 			}
 			
 			if($this->IsValue('/'))
 			{
 				if(floatval($Params[1])==((float)0))
-					return ExpressionToken::NewError("Can't divide by zero",  $this->Position);
+					return BaseExpressionItem::NewError("Can't divide by zero",  $this->Position);
 					
 				return $Params[0]/$Params[1];
 			}
@@ -560,10 +559,10 @@ class ExpressionItem extends BaseExpressionItem
 		if($this->IsValue('%'))
 		{			
 			if(!is_integer($Params[0]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two ingegers", $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two ingegers", $this->Position);
 
 			if(!is_integer($Params[1]))
-				return ExpressionToken::NewError(" operation '" .  $this->Value . "' should only be made between two ingegers",  $this->Position);
+				return BaseExpressionItem::NewError(" operation '" .  $this->Value . "' should only be made between two ingegers",  $this->Position);
 
 			return intval($Params[0]) % intval($Params[1]);
 		}
@@ -586,7 +585,7 @@ class ExpressionItem extends BaseExpressionItem
 		if($this->IsValue('!='))
 			return $Params[0]!=$Params[1];
 		
-		return ExpressionToken::NewError("Unknown operation for evaluateion  '" . $this->Value . "' ",  $this->Position);
+		return BaseExpressionItem::NewError("Unknown operation for evaluateion  '" . $this->Value . "' ",  $this->Position);
 	}
 }
 
@@ -678,7 +677,7 @@ class ExpressionLexer
 				$nextPos=strpos($code,"'",$offset+1);
 				if($nextPos>0)
 					return ExpressionToken::NewToken('string', substr($code,$offset,$nextPos+1-$offset), $offset);
-				return ExpressionToken::NewError('Unterminated string', $offset);
+				return BaseExpressionItem::NewError('Unterminated string', $offset);
 			}
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[a-zA-Z][a-zA-Z0-9_]*/i',$offset);
@@ -691,11 +690,11 @@ class ExpressionLexer
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[0-9]+[\.][0-9]+[a-zA-Z_]/i',$offset);			
 			if(!is_null($res))
-				return ExpressionToken::NewError("Invalid number '$res', need separation between number and letters", $offset);
+				return BaseExpressionItem::NewError("Invalid number '$res', need separation between number and letters", $offset);
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[0-9]+[a-zA-Z_]/i',$offset);			
 			if(!is_null($res))
-				return ExpressionToken::NewError("Invalid number '$res' need separation between number and letters",  $offset);
+				return BaseExpressionItem::NewError("Invalid number '$res' need separation between number and letters",  $offset);
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[0-9]+[\.][0-9]+/i',$offset);			
 			if(!is_null($res))
@@ -703,13 +702,13 @@ class ExpressionLexer
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[0-9]+[\.]/i',$offset);			
 			if(!is_null($res))
-				return ExpressionToken::NewError("Invalid number '$res', Missing digits after decimal point", $offset);
+				return BaseExpressionItem::NewError("Invalid number '$res', Missing digits after decimal point", $offset);
 
 			$res=ExpressionLexer::IsTokenPattern($code,'/[0-9]+/i',$offset);			
 			if(!is_null($res))
 				return ExpressionToken::NewToken('integer', $res, $offset);
 			
-			return ExpressionToken::NewError("Invalid character '" .  substr($code,$offset,1) . "' at this position",  $offset);
+			return BaseExpressionItem::NewError("Invalid character '" .  substr($code,$offset,1) . "' at this position",  $offset);
 		}
 	
 	
